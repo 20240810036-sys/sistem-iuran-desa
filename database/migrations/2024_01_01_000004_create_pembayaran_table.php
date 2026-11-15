@@ -14,7 +14,7 @@ return new class extends Migration
             $table->foreignId('tagihan_id')->constrained('tagihan')->cascadeOnDelete();
             $table->date('tanggal_bayar');
             $table->integer('jumlah_bayar')->unsigned();
-            $table->enum('status', ['lunas', 'belum_lunas'])->default('belum_lunas');
+            $table->enum('status', ['menunggu_verifikasi', 'lunas', 'ditolak', 'belum_lunas'])->default('menunggu_verifikasi');
             $table->timestamps();
 
             // Index untuk query yang sering dipakai

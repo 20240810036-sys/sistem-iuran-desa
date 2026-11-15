@@ -2,18 +2,19 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('pembayaran', function (Blueprint $table) {
-            // Ubah enum status untuk menambah nilai baru
-            $table->enum('status', ['menunggu_verifikasi', 'lunas', 'ditolak', 'belum_lunas'])
-                  ->default('menunggu_verifikasi')
-                  ->change();
+        // Ubah enum status (tanpa doctrine/dbal). Untuk driver lain enum sudah lengkap di migrasi create.
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE pembayaran MODIFY status ENUM('menunggu_verifikasi','lunas','ditolak','belum_lunas') NOT NULL DEFAULT 'menunggu_verifikasi'");
+        }
 
+        Schema::table('pembayaran', function (Blueprint $table) {
             $table->enum('payment_method', ['transfer_bank', 'qris', 'ewallet', 'tunai'])
                   ->nullable()
                   ->after('status');

@@ -19,3 +19,4 @@ yarn-error.log
 
 vendor.zip
 phpunit.sandbox.xml
+".phpunit.result.cache" 

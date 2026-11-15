@@ -188,6 +188,10 @@
                class="sidebar-link {{ request()->routeIs('admin.user.*') ? 'active' : '' }}">
                 <i class="bi bi-person-gear"></i> Kelola User
             </a>
+            <a href="{{ route('admin.activity-log.index') }}"
+               class="sidebar-link {{ request()->routeIs('admin.activity-log.*') ? 'active' : '' }}">
+                <i class="bi bi-shield-check"></i> Log Aktivitas
+            </a>
 
             <div class="sidebar-label">Laporan</div>
             <a href="{{ route('admin.laporan.index') }}"

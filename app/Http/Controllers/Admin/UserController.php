@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\User\StoreUserRequest;
 use App\Http\Requests\User\UpdateUserRequest;
+use App\Models\ActivityLog;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
@@ -23,12 +24,13 @@ class UserController extends Controller
 
     public function store(StoreUserRequest $request)
     {
-        User::create([
+        $user = User::create([
             'name'     => $request->name,
             'email'    => $request->email,
             'password' => Hash::make($request->password),
             'role'     => $request->role,
         ]);
+        ActivityLog::record('user_create', "Menambah user {$user->email} (role: {$user->role})");
 
         return redirect()->route('admin.user.index')
             ->with('success', 'User berhasil ditambahkan.');
@@ -57,6 +59,7 @@ class UserController extends Controller
         }
 
         $user->update($data);
+        ActivityLog::record('user_update', "Mengubah user {$user->email}");
 
         return redirect()->route('admin.user.index')
             ->with('success', 'User berhasil diperbarui.');
@@ -69,6 +72,7 @@ class UserController extends Controller
             return back()->with('error', 'Tidak dapat menghapus akun sendiri.');
         }
 
+        ActivityLog::record('user_delete', "Menghapus user {$user->email}");
         $user->delete();
 
         return redirect()->route('admin.user.index')

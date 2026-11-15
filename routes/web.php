@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\PembayaranController;
 use App\Http\Controllers\Admin\PaymentSettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\LaporanController;
+use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Warga\DashboardController as WargaDashboard;
 use App\Http\Controllers\Warga\TagihanWargaController;
 use App\Http\Controllers\Warga\RiwayatController;
@@ -21,7 +22,9 @@ Route::get('/', function () {
 // Auth Routes
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+    Route::post('/login', [AuthController::class, 'login'])->name('login.post')->middleware('throttle:20,1');
+    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+    Route::post('/register', [AuthController::class, 'register'])->name('register.post')->middleware('throttle:5,1');
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
@@ -51,6 +54,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     // User CRUD
     Route::resource('user', UserController::class);
+
+    // Log Aktivitas (audit trail)
+    Route::get('/activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
 
     // Laporan
     Route::prefix('laporan')->name('laporan.')->group(function () {

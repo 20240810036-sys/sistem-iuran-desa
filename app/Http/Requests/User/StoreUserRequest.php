@@ -3,6 +3,7 @@
 namespace App\Http\Requests\User;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Password;
 
 class StoreUserRequest extends FormRequest
 {
@@ -13,7 +14,7 @@ class StoreUserRequest extends FormRequest
         return [
             'name'     => ['required', 'string', 'max:100'],
             'email'    => ['required', 'email', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:6', 'confirmed'],
+            'password' => ['required', 'confirmed', Password::defaults()],
             'role'     => ['required', 'in:admin,warga'],
         ];
     }
@@ -25,7 +26,6 @@ class StoreUserRequest extends FormRequest
             'email.required'    => 'Email wajib diisi.',
             'email.unique'      => 'Email sudah digunakan.',
             'password.required' => 'Password wajib diisi.',
-            'password.min'      => 'Password minimal 6 karakter.',
             'password.confirmed'=> 'Konfirmasi password tidak cocok.',
             'role.required'     => 'Role wajib dipilih.',
             'role.in'           => 'Role tidak valid.',

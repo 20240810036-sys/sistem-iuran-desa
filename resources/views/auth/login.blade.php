@@ -84,6 +84,9 @@
         </button>
     </form>
 
+    <p class="text-center mt-3 mb-0" style="font-size:.85rem;">
+        Belum punya akun? <a href="{{ route('register') }}">Daftar sebagai warga</a>
+    </p>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>

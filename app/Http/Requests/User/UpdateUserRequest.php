@@ -3,6 +3,7 @@
 namespace App\Http\Requests\User;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\Rule;
 
 class UpdateUserRequest extends FormRequest
@@ -16,7 +17,7 @@ class UpdateUserRequest extends FormRequest
         return [
             'name'     => ['required', 'string', 'max:100'],
             'email'    => ['required', 'email', Rule::unique('users', 'email')->ignore($userId)],
-            'password' => ['nullable', 'string', 'min:6', 'confirmed'],
+            'password' => ['nullable', 'confirmed', Password::defaults()],
             'role'     => ['required', 'in:admin,warga'],
         ];
     }
@@ -27,7 +28,6 @@ class UpdateUserRequest extends FormRequest
             'name.required'  => 'Nama wajib diisi.',
             'email.required' => 'Email wajib diisi.',
             'email.unique'   => 'Email sudah digunakan.',
-            'password.min'   => 'Password minimal 6 karakter.',
             'role.required'  => 'Role wajib dipilih.',
         ];
     }

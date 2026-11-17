@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
             WargaSeeder::class,
             TagihanSeeder::class,
             PembayaranSeeder::class,
+            PaymentSettingSeeder::class,
         ]);
     }
 }

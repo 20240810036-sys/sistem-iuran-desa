@@ -83,3 +83,14 @@ Route::middleware(['auth', 'role:warga'])->prefix('warga')->name('warga.')->grou
     // Riwayat Pembayaran
     Route::get('/riwayat', [RiwayatController::class, 'index'])->name('riwayat.index');
 });
+
+// Dynamic Storage route for environments without symlink (e.g. shared hosting)
+Route::get('/storage/{path}', function ($path) {
+    $filePath = storage_path('app/public/' . $path);
+    if (!file_exists($filePath)) {
+        abort(404);
+    }
+    $mimeType = mime_content_type($filePath) ?: 'application/octet-stream';
+    return response()->file($filePath, ['Content-Type' => $mimeType]);
+})->where('path', '.*')->name('storage.local');
+

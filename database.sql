@@ -70,14 +70,18 @@ CREATE TABLE `tagihan` (
 -- Table: pembayaran
 -- -------------------------------------------------------------
 CREATE TABLE `pembayaran` (
-  `id`            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `warga_id`      BIGINT UNSIGNED NOT NULL,
-  `tagihan_id`    BIGINT UNSIGNED NOT NULL,
-  `tanggal_bayar` DATE            NOT NULL,
-  `jumlah_bayar`  INT UNSIGNED    NOT NULL,
-  `status`        ENUM('lunas','belum_lunas') NOT NULL DEFAULT 'belum_lunas',
-  `created_at`    TIMESTAMP NULL,
-  `updated_at`    TIMESTAMP NULL,
+  `id`                BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `warga_id`          BIGINT UNSIGNED NOT NULL,
+  `tagihan_id`        BIGINT UNSIGNED NOT NULL,
+  `tanggal_bayar`     DATE            NOT NULL,
+  `jumlah_bayar`      INT UNSIGNED    NOT NULL,
+  `status`            ENUM('menunggu_verifikasi','lunas','ditolak','belum_lunas') NOT NULL DEFAULT 'menunggu_verifikasi',
+  `payment_method`    ENUM('transfer_bank','qris','ewallet','tunai') NULL,
+  `payment_channel`   VARCHAR(100) NULL,
+  `proof_of_payment`  VARCHAR(255) NULL,
+  `verification_note` TEXT NULL,
+  `created_at`        TIMESTAMP NULL,
+  `updated_at`        TIMESTAMP NULL,
   PRIMARY KEY (`id`),
   KEY `pembayaran_warga_status` (`warga_id`, `status`),
   KEY `pembayaran_tagihan_status` (`tagihan_id`, `status`),
@@ -85,6 +89,40 @@ CREATE TABLE `pembayaran` (
     FOREIGN KEY (`warga_id`)   REFERENCES `warga` (`id`)   ON DELETE CASCADE,
   CONSTRAINT `pembayaran_tagihan_id_foreign`
     FOREIGN KEY (`tagihan_id`) REFERENCES `tagihan` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -------------------------------------------------------------
+-- Table: payment_settings
+-- -------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `payment_settings` (
+  `id`             BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `type`           ENUM('bank','ewallet','qris') NOT NULL,
+  `provider_name`  VARCHAR(100) NOT NULL,
+  `account_number` VARCHAR(50)  NULL,
+  `account_name`   VARCHAR(100) NULL,
+  `qr_image`       VARCHAR(255) NULL,
+  `is_active`      TINYINT(1)   NOT NULL DEFAULT 1,
+  `created_at`     TIMESTAMP    NULL,
+  `updated_at`     TIMESTAMP    NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -------------------------------------------------------------
+-- Table: activity_logs
+-- -------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `activity_logs` (
+  `id`          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `user_id`     BIGINT UNSIGNED NULL,
+  `action`      VARCHAR(100)    NOT NULL,
+  `description` TEXT            NULL,
+  `ip_address`  VARCHAR(45)     NULL,
+  `user_agent`  TEXT            NULL,
+  `created_at`  TIMESTAMP       NULL,
+  `updated_at`  TIMESTAMP       NULL,
+  PRIMARY KEY (`id`),
+  KEY `activity_logs_user_id_foreign` (`user_id`),
+  CONSTRAINT `activity_logs_user_id_foreign`
+    FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -------------------------------------------------------------
@@ -166,5 +204,16 @@ INSERT INTO `pembayaran` (`warga_id`, `tagihan_id`, `tanggal_bayar`, `jumlah_bay
 (5, 4, '2025-04-12', 15000, 'lunas', NOW(), NOW()),
 (5, 5, '2025-05-11', 15000, 'belum_lunas', NOW(), NOW()),
 (5, 6, '2025-06-13', 15000, 'lunas', NOW(), NOW());
+
+INSERT INTO `payment_settings` (`type`, `provider_name`, `account_number`, `account_name`, `is_active`, `created_at`, `updated_at`) VALUES
+('bank',    'BCA',       '1234567890',  'Bendahara RT', 1, NOW(), NOW()),
+('bank',    'BRI',       '0987654321',  'Bendahara RT', 1, NOW(), NOW()),
+('bank',    'BNI',       '1122334455',  'Bendahara RT', 0, NOW(), NOW()),
+('bank',    'Mandiri',   '5566778899',  'Bendahara RT', 0, NOW(), NOW()),
+('ewallet', 'DANA',      '08123456789', 'Bendahara RT', 1, NOW(), NOW()),
+('ewallet', 'OVO',       '08123456789', 'Bendahara RT', 1, NOW(), NOW()),
+('ewallet', 'GoPay',     '08123456789', 'Bendahara RT', 0, NOW(), NOW()),
+('ewallet', 'ShopeePay', '08123456789', 'Bendahara RT', 0, NOW(), NOW()),
+('qris',    'QRIS',      NULL,          NULL,           1, NOW(), NOW());
 
 SET FOREIGN_KEY_CHECKS = 1;

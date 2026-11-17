@@ -78,6 +78,9 @@ Route::middleware(['auth', 'role:warga'])->prefix('warga')->name('warga.')->grou
     // Tagihan
     Route::get('/tagihan', [TagihanWargaController::class, 'index'])->name('tagihan.index');
     Route::get('/tagihan/{pembayaran}', [TagihanWargaController::class, 'show'])->name('tagihan.show');
+    Route::get('/tagihan/{pembayaran}/upload-bukti', function ($pembayaran) {
+        return redirect()->route('warga.tagihan.show', $pembayaran);
+    });
     Route::post('/tagihan/{pembayaran}/upload-bukti', [TagihanWargaController::class, 'uploadBukti'])->name('tagihan.upload-bukti');
 
     // Riwayat Pembayaran

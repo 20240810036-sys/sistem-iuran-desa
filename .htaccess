@@ -1,0 +1,21 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # 1. Otomatis alihkan koneksi HTTP biasa ke HTTPS (Enkripsi SSL/TLS)
+    RewriteCond %{HTTP:X-Forwarded-Proto} !https
+    RewriteCond %{HTTPS} off
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # 2. Meneruskan request ke subdirektori public/
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L,QSA]
+</IfModule>
+
+# 3. Proteksi ketat berkas sensitif dari akses publik
+<FilesMatch "^\.env|\.git|composer\.(json|lock)">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# 4. Mencegah directory listing
+Options -Indexes

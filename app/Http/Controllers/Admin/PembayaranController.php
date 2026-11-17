@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Pembayaran\StorePembayaranRequest;
 use App\Http\Requests\Pembayaran\UpdatePembayaranRequest;
 use App\Http\Requests\Pembayaran\VerifikasiPembayaranRequest;
+use App\Models\ActivityLog;
 use App\Models\Pembayaran;
 use App\Models\Tagihan;
 use App\Models\Warga;
@@ -90,6 +91,8 @@ class PembayaranController extends Controller
             'verification_note' => null,
         ]);
 
+        ActivityLog::record('pembayaran_setujui', "Admin menyetujui pembayaran #{$pembayaran->id} milik {$pembayaran->warga->nama}");
+
         return back()->with('success', 'Pembayaran warga ' . $pembayaran->warga->nama . ' telah disetujui.');
     }
 
@@ -102,6 +105,8 @@ class PembayaranController extends Controller
             'status'            => Pembayaran::STATUS_DITOLAK,
             'verification_note' => $request->verification_note,
         ]);
+
+        ActivityLog::record('pembayaran_tolak', "Admin menolak pembayaran #{$pembayaran->id} milik {$pembayaran->warga->nama}");
 
         return back()->with('success', 'Pembayaran warga ' . $pembayaran->warga->nama . ' telah ditolak.');
     }

@@ -7,10 +7,43 @@ use App\Http\Requests\PaymentSetting\StorePaymentSettingRequest;
 use App\Http\Requests\PaymentSetting\UpdatePaymentSettingRequest;
 use App\Models\PaymentSetting;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Str;
 
 class PaymentSettingController extends Controller
 {
+    /**
+     * Simpan gambar QRIS secara aman tanpa ketergantungan php_fileinfo (shared hosting resilient).
+     */
+    private function storeQrImage(UploadedFile $file): string
+    {
+        $ext = strtolower($file->getClientOriginalExtension() ?: pathinfo($file->getClientOriginalName(), PATHINFO_EXTENSION) ?: 'png');
+        if (!in_array($ext, ['jpg', 'jpeg', 'png'], true)) {
+            abort(422, 'Format gambar QRIS harus JPG, JPEG, atau PNG.');
+        }
+
+        $imgInfo = @getimagesize($file->getRealPath());
+        if (!$imgInfo || !in_array($imgInfo[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG], true)) {
+            abort(422, 'Isi berkas gambar QRIS tidak valid.');
+        }
+
+        $fileName   = time() . '_' . Str::random(12) . '.' . $ext;
+        $publicDir  = public_path('storage/qris');
+        $storageDir = storage_path('app/public/qris');
+
+        if (!is_dir($publicDir)) {
+            @mkdir($publicDir, 0777, true);
+        }
+        if (!is_dir($storageDir)) {
+            @mkdir($storageDir, 0777, true);
+        }
+
+        $file->move($publicDir, $fileName);
+        @copy($publicDir . '/' . $fileName, $storageDir . '/' . $fileName);
+
+        return 'qris/' . $fileName;
+    }
+
     public function index()
     {
         $banks    = PaymentSetting::byType('bank')->get();
@@ -30,7 +63,7 @@ class PaymentSettingController extends Controller
         $data = $request->validated();
 
         if ($request->hasFile('qr_image')) {
-            $data['qr_image'] = $request->file('qr_image')->store('qris', 'public');
+            $data['qr_image'] = $this->storeQrImage($request->file('qr_image'));
         }
 
         PaymentSetting::create($data);
@@ -51,9 +84,10 @@ class PaymentSettingController extends Controller
         if ($request->hasFile('qr_image')) {
             // Hapus QRIS lama jika ada
             if ($paymentSetting->qr_image) {
-                Storage::disk('public')->delete($paymentSetting->qr_image);
+                @unlink(storage_path('app/public/' . $paymentSetting->qr_image));
+                @unlink(public_path('storage/' . $paymentSetting->qr_image));
             }
-            $data['qr_image'] = $request->file('qr_image')->store('qris', 'public');
+            $data['qr_image'] = $this->storeQrImage($request->file('qr_image'));
         }
 
         $paymentSetting->update($data);
@@ -65,7 +99,8 @@ class PaymentSettingController extends Controller
     public function destroy(PaymentSetting $paymentSetting)
     {
         if ($paymentSetting->qr_image) {
-            Storage::disk('public')->delete($paymentSetting->qr_image);
+            @unlink(storage_path('app/public/' . $paymentSetting->qr_image));
+            @unlink(public_path('storage/' . $paymentSetting->qr_image));
         }
 
         $paymentSetting->delete();

@@ -17,6 +17,12 @@
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
 </div>
 @endif
+@if(session('error'))
+<div class="alert alert-danger alert-dismissible fade show">
+    <i class="bi bi-exclamation-octagon-fill me-2"></i>{{ session('error') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+@endif
 @if($errors->any())
 <div class="alert alert-danger alert-dismissible fade show">
     <ul class="mb-0">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
@@ -58,14 +64,15 @@
                 @if($pembayaran->proof_of_payment)
                 <hr>
                 <p class="fw-500 mb-1" style="font-size:.875rem;">Bukti Pembayaran:</p>
-                @if(Str::endsWith($pembayaran->proof_of_payment, '.pdf'))
+                @if(Str::endsWith(strtolower($pembayaran->proof_of_payment), '.pdf'))
                 <a href="{{ $pembayaran->proof_url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
                     <i class="bi bi-file-pdf me-1"></i>Lihat PDF
                 </a>
                 @else
                 <a href="{{ $pembayaran->proof_url }}" target="_blank">
                     <img src="{{ $pembayaran->proof_url }}" alt="Bukti"
-                         style="max-width:100%;border-radius:8px;border:1px solid #dee2e6;">
+                         style="max-width:100%;border-radius:8px;border:1px solid #dee2e6;"
+                         onerror="this.onerror=null; this.src='{{ asset('storage/' . $pembayaran->proof_of_payment) }}';">
                 </a>
                 @endif
                 @endif
@@ -184,8 +191,8 @@
 
         {{-- Form Upload Bukti --}}
         <div class="card mt-3" id="upload-section" style="display:none!important;">
-            <div class="card-header">
-                <i class="bi bi-upload me-2"></i>Upload Bukti Pembayaran
+            <div class="card-header bg-white fw-600">
+                <i class="bi bi-upload me-2 text-primary"></i>Upload Bukti Pembayaran
             </div>
             <div class="card-body">
                 <form action="{{ route('warga.tagihan.upload-bukti', $pembayaran) }}" method="POST" enctype="multipart/form-data">
@@ -194,14 +201,23 @@
                     <input type="hidden" name="payment_channel" id="input-payment-channel">
 
                     <div class="mb-3">
-                        <label class="form-label fw-500">Bukti Pembayaran <span class="text-danger">*</span></label>
-                        <input type="file" name="proof_of_payment" accept=".jpg,.jpeg,.png,.pdf"
-                               class="form-control @error('proof_of_payment') is-invalid @enderror">
-                        <div class="form-text">Format: JPG, PNG, atau PDF. Maks 2 MB.</div>
+                        <label class="form-label fw-500">Berkas Bukti Pembayaran <span class="text-danger">*</span></label>
+                        <input type="file" name="proof_of_payment" id="proof-input" accept=".jpg,.jpeg,.png,.pdf,image/*"
+                               class="form-control @error('proof_of_payment') is-invalid @enderror" required>
+                        <div class="form-text">Format didukung: JPG, PNG, atau PDF. Ukuran berkas maksimal 2 MB.</div>
                         @error('proof_of_payment')<div class="invalid-feedback">{{ $message }}</div>@enderror
+
+                        {{-- Live Preview Box --}}
+                        <div id="preview-box" class="mt-3 p-2 border rounded bg-light d-none text-center">
+                            <div class="small fw-600 text-muted mb-2 text-start"><i class="bi bi-eye me-1"></i>Pratinjau Berkas:</div>
+                            <img id="image-preview" src="" alt="Pratinjau" style="max-height: 220px; max-width: 100%; border-radius: 6px; object-fit: contain;" class="d-none">
+                            <div id="pdf-preview" class="alert alert-info py-2 px-3 small d-none mb-0 text-start">
+                                <i class="bi bi-file-earmark-pdf fs-5 me-2 text-danger"></i> Dokumen PDF dipilih: <strong id="pdf-name"></strong>
+                            </div>
+                        </div>
                     </div>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-upload me-1"></i>Kirim Bukti
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-600">
+                        <i class="bi bi-cloud-arrow-up-fill me-1"></i>Kirim Bukti Pembayaran
                     </button>
                 </form>
             </div>
@@ -212,18 +228,28 @@
 
 @push('scripts')
 <script>
-const methodBtns = document.querySelectorAll('.method-btn');
-const panels     = document.querySelectorAll('.payment-panel');
+const methodBtns   = document.querySelectorAll('.method-btn');
+const panels       = document.querySelectorAll('.payment-panel');
 const channelCards = () => document.querySelectorAll('.channel-card');
+const uploadSection = document.getElementById('upload-section');
+const inputMethod   = document.getElementById('input-payment-method');
+const inputChannel  = document.getElementById('input-payment-channel');
+const proofInput    = document.getElementById('proof-input');
+const previewBox    = document.getElementById('preview-box');
+const imagePreview  = document.getElementById('image-preview');
+const pdfPreview    = document.getElementById('pdf-preview');
+const pdfName       = document.getElementById('pdf-name');
 
 let selectedMethod  = null;
 let selectedChannel = null;
 
 function updateUploadSection() {
     const showUpload = selectedMethod && (selectedChannel || selectedMethod === 'tunai' || selectedMethod === 'qris');
-    document.getElementById('upload-section').style.setProperty('display', showUpload ? 'block' : 'none', 'important');
-    document.getElementById('input-payment-method').value  = selectedMethod ?? '';
-    document.getElementById('input-payment-channel').value = selectedChannel ?? selectedMethod ?? '';
+    if (uploadSection) {
+        uploadSection.style.setProperty('display', showUpload ? 'block' : 'none', 'important');
+    }
+    if (inputMethod)  inputMethod.value  = selectedMethod ?? '';
+    if (inputChannel) inputChannel.value = selectedChannel ?? selectedMethod ?? '';
 }
 
 methodBtns.forEach(btn => {
@@ -231,16 +257,13 @@ methodBtns.forEach(btn => {
         selectedMethod  = this.dataset.method;
         selectedChannel = null;
 
-        // Reset btn styles
         methodBtns.forEach(b => b.classList.replace('btn-primary', 'btn-outline-primary'));
         this.classList.replace('btn-outline-primary', 'btn-primary');
 
-        // Show correct panel
         panels.forEach(p => p.classList.add('d-none'));
         const panel = document.getElementById('panel-' + selectedMethod);
         if (panel) panel.classList.remove('d-none');
 
-        // Auto-set channel for QRIS and Tunai
         if (selectedMethod === 'qris')  selectedChannel = 'QRIS';
         if (selectedMethod === 'tunai') selectedChannel = 'Tunai';
 
@@ -253,12 +276,55 @@ document.addEventListener('click', function(e) {
     if (!card) return;
 
     selectedChannel = card.dataset.channel;
-
-    // Highlight selected card
     channelCards().forEach(c => c.classList.remove('border-primary', 'bg-primary', 'bg-opacity-10'));
     card.classList.add('border-primary');
 
     updateUploadSection();
+});
+
+// Live file preview handler
+if (proofInput) {
+    proofInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (!file) {
+            previewBox.classList.add('d-none');
+            return;
+        }
+
+        if (file.size > 2 * 1024 * 1024) {
+            alert('Ukuran berkas melebihi batas 2 MB. Mohon pilih berkas yang lebih kecil.');
+            this.value = '';
+            previewBox.classList.add('d-none');
+            return;
+        }
+
+        previewBox.classList.remove('d-none');
+        if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+            imagePreview.classList.add('d-none');
+            pdfPreview.classList.remove('d-none');
+            pdfName.textContent = file.name;
+        } else {
+            pdfPreview.classList.add('d-none');
+            imagePreview.classList.remove('d-none');
+            imagePreview.src = URL.createObjectURL(file);
+        }
+    });
+}
+
+// Auto restore selection if old input or previous payment method exists
+window.addEventListener('DOMContentLoaded', () => {
+    const defaultMethod = @json(old('payment_method', $pembayaran->payment_method));
+    const defaultChannel = @json(old('payment_channel', $pembayaran->payment_channel));
+    if (defaultMethod) {
+        const btn = document.querySelector(`.method-btn[data-method="${defaultMethod}"]`);
+        if (btn) {
+            btn.click();
+            if (defaultChannel) {
+                const card = document.querySelector(`.channel-card[data-channel="${defaultChannel}"]`);
+                if (card) card.click();
+            }
+        }
+    }
 });
 
 function printQRIS() {

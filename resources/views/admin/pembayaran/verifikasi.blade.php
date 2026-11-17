@@ -49,14 +49,35 @@
                         <td>{{ $p->payment_channel ?? '-' }}</td>
                         <td>
                             @if($p->proof_of_payment)
-                                @if(Str::endsWith($p->proof_of_payment, '.pdf'))
-                                <a href="{{ $p->proof_url }}" target="_blank" class="btn btn-xs btn-outline-secondary py-0 px-2">
-                                    <i class="bi bi-file-pdf"></i> PDF
+                                @if(Str::endsWith(strtolower($p->proof_of_payment), '.pdf'))
+                                <a href="{{ $p->proof_url }}" target="_blank" class="btn btn-xs btn-outline-danger py-0 px-2">
+                                    <i class="bi bi-file-earmark-pdf"></i> Dokumen PDF
                                 </a>
                                 @else
-                                <a href="{{ $p->proof_url }}" target="_blank">
-                                    <img src="{{ $p->proof_url }}" alt="Bukti" style="width:56px;height:56px;object-fit:cover;border-radius:4px;border:1px solid #dee2e6;">
+                                <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#modalBukti{{ $p->id }}" title="Klik untuk perbesar bukti">
+                                    <img src="{{ $p->proof_url }}" alt="Bukti" style="width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid #dee2e6;transition:transform .2s;" onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'" onerror="this.onerror=null; this.src='{{ asset('storage/' . $p->proof_of_payment) }}';">
                                 </a>
+
+                                {{-- Modal Preview Gambar Bukti --}}
+                                <div class="modal fade" id="modalBukti{{ $p->id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered modal-lg">
+                                        <div class="modal-content">
+                                            <div class="modal-header py-2">
+                                                <h6 class="modal-title"><i class="bi bi-image me-2"></i>Bukti Pembayaran - {{ $p->warga->nama ?? '-' }}</h6>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body text-center p-3 bg-light">
+                                                <img src="{{ $p->proof_url }}" alt="Bukti Pembayaran" style="max-width:100%;max-height:80vh;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.15);" onerror="this.onerror=null; this.src='{{ asset('storage/' . $p->proof_of_payment) }}';">
+                                            </div>
+                                            <div class="modal-footer py-2">
+                                                <a href="{{ $p->proof_url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-box-arrow-up-right me-1"></i>Buka di Tab Baru
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                                 @endif
                             @else
                             <span class="text-muted">-</span>

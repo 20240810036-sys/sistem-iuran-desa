@@ -16,14 +16,17 @@ class AppServiceProvider extends ServiceProvider
         Paginator::useBootstrapFive();
 
         // Kebijakan password kuat: min 8, huruf besar+kecil, angka, simbol.
-        // uncompromised() memeriksa ke database kebocoran HaveIBeenPwned (khusus production).
+        // Tidak memakai uncompromised() agar tidak bergantung pada koneksi eksternal HIBP di shared hosting.
         Password::defaults(function () {
-            $rule = Password::min(8)->letters()->mixedCase()->numbers()->symbols();
-            return $this->app->isProduction() ? $rule->uncompromised() : $rule;
+            return Password::min(8)->letters()->mixedCase()->numbers()->symbols();
         });
 
-        // Paksa semua URL memakai HTTPS di production
-        if ($this->app->isProduction()) {
+        // Paksa semua URL memakai HTTPS jika di production atau diakses via HTTPS / proxy HTTPS (cegah Mixed Content)
+        if ($this->app->isProduction() 
+            || (request()->isSecure()) 
+            || (request()->server('HTTP_X_FORWARDED_PROTO') === 'https') 
+            || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443)) {
             URL::forceScheme('https');
         }
     }

@@ -12,7 +12,7 @@
 </IfModule>
 
 # 3. Proteksi ketat berkas sensitif dari akses publik
-<FilesMatch "^\.env|\.git|composer\.(json|lock)">
+<FilesMatch "(\.env.*|\.git.*|\.sql|\.log|artisan|composer\.(json|lock)|phpunit.*|package\.json|vite\.config.*)">
     Order allow,deny
     Deny from all
 </FilesMatch>

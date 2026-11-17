@@ -4,8 +4,8 @@ Aplikasi web untuk mengelola **iuran sampah warga desa**: pendataan warga, pembu
 
 > Tugas Project Mata Kuliah **Cyber Security** – Pengembangan & Pengamanan Aplikasi Web.
 
-- **URL Aplikasi:** https://GANTI-DENGAN-DOMAIN-ANDA
-- **Repository:** https://github.com/GANTI/sistem-iuran-sampah-desa
+- **URL Aplikasi:** https://iuransampahdesa.free.nf
+- **Repository:** https://github.com/20240810036-sys/sistem-iuran-desa
 
 ---
 
@@ -23,11 +23,11 @@ Aplikasi web untuk mengelola **iuran sampah warga desa**: pendataan warga, pembu
 
 ## 🧱 Teknologi
 
-- **Backend:** Laravel 10 (PHP 8.1+)
+- **Backend:** Laravel 12 (PHP 8.1+)
 - **Database:** MySQL / MariaDB
 - **Frontend:** Blade + Bootstrap 5 + Bootstrap Icons (CDN)
 - **Library:** `barryvdh/laravel-dompdf` (PDF), `maatwebsite/excel` (Excel)
-- **Hosting:** _isi sesuai yang dipakai (mis. InfinityFree / Railway / VPS) + SSL_
+- **Hosting:** InfinityFree (`iuransampahdesa.free.nf`) + HTTPS/SSL
 
 ```mermaid
 flowchart LR
@@ -40,8 +40,8 @@ flowchart LR
 ## 🚀 Instalasi Lokal
 
 ```bash
-git clone https://github.com/GANTI/sistem-iuran-sampah-desa.git
-cd sistem-iuran-sampah-desa
+git clone https://github.com/20240810036-sys/sistem-iuran-desa.git
+cd sistem-iuran-desa
 composer install
 cp .env.example .env          # lalu isi konfigurasi database
 php artisan key:generate

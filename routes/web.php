@@ -88,12 +88,50 @@ Route::middleware(['auth', 'role:warga'])->prefix('warga')->name('warga.')->grou
 });
 
 // Dynamic Storage route for environments without symlink (e.g. shared hosting)
-Route::get('/storage/{path}', function ($path) {
-    $filePath = storage_path('app/public/' . $path);
-    if (!file_exists($filePath)) {
-        abort(404);
+$storageHandler = function ($path) {
+    // Cegah path traversal (../, null byte, dll)
+    $cleanPath = ltrim(str_replace(['..', "\0", '\\'], ['', '', '/'], $path), '/');
+    if ($cleanPath === '') {
+        abort(404, 'File not found');
     }
-    $mimeType = mime_content_type($filePath) ?: 'application/octet-stream';
-    return response()->file($filePath, ['Content-Type' => $mimeType]);
-})->where('path', '.*')->name('storage.local');
+
+    $storageBase = realpath(storage_path('app/public'));
+    $publicBase  = realpath(public_path('storage'));
+
+    $storageFilePath = $storageBase ? realpath($storageBase . DIRECTORY_SEPARATOR . $cleanPath) : false;
+    $publicFilePath  = $publicBase ? realpath($publicBase . DIRECTORY_SEPARATOR . $cleanPath) : false;
+
+    if ($storageFilePath && $storageBase && str_starts_with($storageFilePath, $storageBase . DIRECTORY_SEPARATOR) && is_file($storageFilePath)) {
+        $filePath = $storageFilePath;
+    } elseif ($publicFilePath && $publicBase && str_starts_with($publicFilePath, $publicBase . DIRECTORY_SEPARATOR) && is_file($publicFilePath)) {
+        $filePath = $publicFilePath;
+    } else {
+        abort(404, 'File not found');
+    }
+
+    $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+    $mimeTypes = [
+        'png'  => 'image/png',
+        'jpg'  => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'gif'  => 'image/gif',
+        'webp' => 'image/webp',
+        'svg'  => 'image/svg+xml',
+        'pdf'  => 'application/pdf',
+        'ico'  => 'image/x-icon',
+    ];
+
+    if (!array_key_exists($extension, $mimeTypes)) {
+        abort(403, 'Tipe berkas tidak diizinkan.');
+    }
+
+    return response()->file($filePath, [
+        'Content-Type'           => $mimeTypes[$extension],
+        'X-Content-Type-Options' => 'nosniff',
+        'Cache-Control'          => 'public, max-age=86400',
+    ]);
+};
+
+Route::get('/storage/{path}', $storageHandler)->where('path', '.*')->name('storage.local');
+Route::get('/public/storage/{path}', $storageHandler)->where('path', '.*');
 

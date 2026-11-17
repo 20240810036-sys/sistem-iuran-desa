@@ -15,7 +15,7 @@ class UpdatePaymentSettingRequest extends FormRequest
             'provider_name'  => ['required', 'string', 'max:100'],
             'account_number' => ['nullable', 'string', 'max:50'],
             'account_name'   => ['nullable', 'string', 'max:100'],
-            'qr_image'       => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
+            'qr_image'       => ['nullable', 'file', 'max:2048'],
             'is_active'      => ['boolean'],
         ];
     }

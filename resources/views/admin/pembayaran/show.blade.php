@@ -36,6 +36,31 @@
             <dt class="col-5 text-muted">Status</dt>
             <dd class="col-7">{!! $pembayaran->status_badge !!}</dd>
 
+            @if($pembayaran->payment_method)
+            <dt class="col-5 text-muted">Metode Bayar</dt>
+            <dd class="col-7">{{ $pembayaran->payment_method_label }} ({{ $pembayaran->payment_channel ?? '-' }})</dd>
+            @endif
+
+            @if($pembayaran->proof_of_payment)
+            <dt class="col-5 text-muted">Bukti Bayar</dt>
+            <dd class="col-7">
+                @if(Str::endsWith(strtolower($pembayaran->proof_of_payment), '.pdf'))
+                <a href="{{ $pembayaran->proof_url }}" target="_blank" class="btn btn-xs btn-outline-danger py-0 px-2">
+                    <i class="bi bi-file-earmark-pdf"></i> Dokumen PDF
+                </a>
+                @else
+                <a href="{{ $pembayaran->proof_url }}" target="_blank">
+                    <img src="{{ $pembayaran->proof_url }}" alt="Bukti" style="max-height:100px;border-radius:4px;border:1px solid #dee2e6;" onerror="this.onerror=null; this.src='{{ asset('storage/' . $pembayaran->proof_of_payment) }}';">
+                </a>
+                @endif
+            </dd>
+            @endif
+
+            @if($pembayaran->verification_note)
+            <dt class="col-5 text-muted">Catatan Verifikasi</dt>
+            <dd class="col-7 text-danger">{{ $pembayaran->verification_note }}</dd>
+            @endif
+
             <dt class="col-5 text-muted">Dicatat</dt>
             <dd class="col-7">{{ $pembayaran->created_at->format('d M Y H:i') }}</dd>
         </dl>

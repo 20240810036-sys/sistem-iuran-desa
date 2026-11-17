@@ -48,26 +48,38 @@ class TagihanWargaController extends Controller
      */
     public function uploadBukti(UploadBuktiRequest $request, Pembayaran $pembayaran)
     {
-        $warga = Auth::user()->warga;
-        abort_if(!$warga || $pembayaran->warga_id !== $warga->id, 403);
+        try {
+            $warga = Auth::user()->warga;
+            abort_if(!$warga || $pembayaran->warga_id !== $warga->id, 403, 'Akses ditolak.');
 
-        // Hanya bisa upload jika belum lunas / ditolak
-        abort_if($pembayaran->status === Pembayaran::STATUS_LUNAS, 422, 'Pembayaran sudah lunas.');
+            // Hanya bisa upload jika belum lunas / ditolak
+            abort_if($pembayaran->status === Pembayaran::STATUS_LUNAS, 422, 'Pembayaran sudah lunas.');
 
-        // Hapus bukti lama jika ada
-        if ($pembayaran->proof_of_payment) {
-            Storage::disk('public')->delete($pembayaran->proof_of_payment);
+            // Pastikan direktori proofs ada
+            $proofsDir = storage_path('app/public/proofs');
+            if (!file_exists($proofsDir)) {
+                @mkdir($proofsDir, 0775, true);
+            }
+
+            // Hapus bukti lama jika ada
+            if ($pembayaran->proof_of_payment) {
+                try {
+                    Storage::disk('public')->delete($pembayaran->proof_of_payment);
+                } catch (\Throwable $ignored) {}
+            }
+
+            $path = $request->file('proof_of_payment')->store('proofs', 'public');
+
+            $pembayaran->update([
+                'proof_of_payment' => $path,
+                'payment_method'   => $request->payment_method,
+                'payment_channel'  => $request->payment_channel,
+                'status'           => Pembayaran::STATUS_MENUNGGU_VERIFIKASI,
+            ]);
+
+            return back()->with('success', 'Bukti pembayaran berhasil diunggah. Menunggu verifikasi admin.');
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Gagal upload bukti: ' . $e->getMessage());
         }
-
-        $path = $request->file('proof_of_payment')->store('proofs', 'public');
-
-        $pembayaran->update([
-            'proof_of_payment' => $path,
-            'payment_method'   => $request->payment_method,
-            'payment_channel'  => $request->payment_channel,
-            'status'           => Pembayaran::STATUS_MENUNGGU_VERIFIKASI,
-        ]);
-
-        return back()->with('success', 'Bukti pembayaran berhasil diunggah. Menunggu verifikasi admin.');
     }
 }
